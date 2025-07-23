@@ -1,8 +1,12 @@
-from anthropic import AnthropicVertex
+from openai import OpenAI
 import os
 import logging
 import json
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 log_directory = os.getenv("LOG_DIR", "logs")
@@ -41,20 +45,13 @@ def call_llm(prompt: str, use_cache: bool = True) -> str:
             return cache[prompt]
     
     # Call the LLM if not in cache or cache disabled
-    client = AnthropicVertex(
-        region=os.getenv("ANTHROPIC_REGION", "us-east5"),
-        project_id=os.getenv("ANTHROPIC_PROJECT_ID", "your-project-id")
-    )
-    response = client.messages.create(
-        max_tokens=20000,
-        thinking={
-            "type": "enabled",
-            "budget_tokens": 16000
-        },
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model="gpt-4o",
         messages=[{"role": "user", "content": prompt}],
-        model="claude-3-7-sonnet@20250219"
+        max_tokens=16384
     )
-    response_text = response.content[1].text
+    response_text = response.choices[0].message.content
     
     # Log the response
     logger.info(f"RESPONSE: {response_text}")
